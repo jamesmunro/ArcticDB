@@ -84,10 +84,10 @@ def test_fails_humongous_data():
 
 def create_df_params():
     params = dict()
-    if pd.__version__.startswith("1"):
-        df = pd.DataFrame(data={"C": []}, index=pd.MultiIndex(levels=[["A"], ["B"]], codes=[[], []], names=["X", "Y"]))
-    else:
+    if pd.__version__.startswith("0"):
         df = pd.DataFrame(data={"C": []}, index=pd.MultiIndex(levels=[["A"], ["B"]], labels=[[], []], names=["X", "Y"]))
+    else:
+        df = pd.DataFrame(data={"C": []}, index=pd.MultiIndex(levels=[["A"], ["B"]], codes=[[], []], names=["X", "Y"]))
     params["empty_midx"] = df
     return params
 
@@ -99,10 +99,10 @@ def test_store_df(d):
     df, norm_meta = norm.normalize(d)
     fd = FrameData.from_npd_df(df)
     D = norm.denormalize(fd, norm_meta)
-    if pd.__version__.startswith("1"):
-        assert_equal(d.index.to_numpy(), D.index.to_numpy())
-    else:
+    if pd.__version__.startswith("0"):
         assert_equal(d.index.get_values(), D.index.get_values())
+    else:
+        assert_equal(d.index.to_numpy(), D.index.to_numpy())
     D.index = d.index
     assert_frame_equal(d, D)
 
@@ -128,10 +128,10 @@ def test_multiindex_with_tz():
     df, norm_meta = norm.normalize(d)
     fd = FrameData.from_npd_df(df)
     denorm = norm.denormalize(fd, norm_meta)
-    if pd.__version__.startswith("1"):
-        assert_equal(d.index.to_numpy(), denorm.index.to_numpy())
-    else:
+    if pd.__version__.startswith("0"):
         assert_equal(d.index.get_values(), denorm.index.get_values())
+    else:
+        assert_equal(d.index.to_numpy(), denorm.index.to_numpy())
     denorm.index = d.index
     assert_frame_equal(d, denorm)
 
@@ -228,10 +228,10 @@ def test_namedtuple_inside_df():
     df, norm_meta = norm.normalize(d)
     fd = FrameData.from_npd_df(df)
     denorm = norm.denormalize(fd, norm_meta)
-    if pd.__version__.startswith("1"):
-        assert_equal(d.index.to_numpy(), denorm.index.to_numpy())
-    else:
+    if pd.__version__.startswith("0"):
         assert_equal(d.index.get_values(), denorm.index.get_values())
+    else:
+        assert_equal(d.index.to_numpy(), denorm.index.to_numpy())
     denorm.index = d.index
     assert_frame_equal(d, denorm)
 
@@ -364,7 +364,7 @@ def test_none_in_columns_names(lmdb_version_store, sym):
     df2 = pd.DataFrame(data={None: [5.2, 6.2], "None": [1.3, 5.5]}, index=[pd.Timestamp(2), pd.Timestamp(3)])
     lmdb_version_store.append(sym, df2)
     vit = lmdb_version_store.read(sym)
-    assert_frame_equal(vit.data, df.append(df2))
+    assert_frame_equal(vit.data, pd.concat((df, df2)))
 
 
 def test_same_columns_names(lmdb_version_store, sym):
@@ -382,7 +382,7 @@ def test_same_columns_names(lmdb_version_store, sym):
     df2.columns = ["test", None, "test", None]
     lmdb_version_store.append(sym, df2)
     vit = lmdb_version_store.read(sym)
-    assert_frame_equal(vit.data, df.append(df2))
+    assert_frame_equal(vit.data, pd.concat((df, df2)))
 
     x = pd.DataFrame([[1, 2], [3, 4]], columns=[0, 0])
     lmdb_version_store.write(sym, x)
@@ -403,7 +403,7 @@ def test_columns_names_dynamic_schema(lmdb_version_store_dynamic_schema, sym):
     df2 = pd.DataFrame(data={"none": [22.4, 21.2], None: [25.3, 31.5]}, index=[pd.Timestamp(2), pd.Timestamp(3)])
     df2.index.name = "None"
     lmdb_version_store.append(sym, df2)
-    df3 = df.append(df2)
+    df3 = pd.concat((df, df2))
     df4 = lmdb_version_store.read(sym).data
     df4 = df4[df3.columns.tolist()]
     assert_frame_equal(df4, df3)

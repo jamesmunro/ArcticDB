@@ -465,7 +465,6 @@ def make_dynamic(df, num_slices=10):
     rows_per_slice = 1 if rows_per_slice == 0 else rows_per_slice
 
     slices = []
-    expected = pd.DataFrame()
     column_index = 0
 
     for step in range(0, num_rows, rows_per_slice):
@@ -476,8 +475,8 @@ def make_dynamic(df, num_slices=10):
             df_slice = df_slice.drop(columns=[col_to_drop])
         column_index += 1
         slices.append(df_slice)
-        expected = expected.append(df_slice)
-
+    
+    expected = pd.concat(slices)
     return expected, slices
 
 
